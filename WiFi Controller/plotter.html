@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html" lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Plotter</title>
+        <style>
+            input.x {width: 30px}
+            div.big {font-size: 20px}
+        </style>
+    </head>
+    <body>
+        <textarea id="input_file" cols="50" rows="20"></textarea>
+        <textarea id="output" cols="50" rows="20"></textarea>
+        <br/>
+        <input type="file" id="file_picker" name="File" />
+        <input type="button" value="Run" id="run">
+
+    <script>
+        var hostname = location.hostname === "" ? "127.0.0.1" : location.hostname;
+        var ws = new WebSocket("ws://" + hostname  + ":80");
+
+        // Number of commands that will be buffered on device
+        const BUFFER_SIZE = 10;
+
+        var input_lines = [];
+        var input_line_idx = 0;
+        var processing_line_idx = 0;
+        var finished = false;
+        var recv_buffer = "";
+
+        ws.onopen = function () {
+        };
+
+        ws.onmessage = function (evt) {
+            recv_buffer += evt.data;
+
+            while (true) {
+                var ln_idx = recv_buffer.indexOf("\n");
+                if (ln_idx < 0)
+                    break;
+                var msg = recv_buffer.substring(0, ln_idx);
+                recv_buffer = recv_buffer.substring(ln_idx+1);
+                var items = msg.split("*");
+
+                add_to_output(msg);
+                if (msg.length > 0 && msg[0] === "!")
+                    return;
+
+                var csum = parseInt(items[2]);
+                if (checksum(items[0] + "*" + items[1]) !== csum)
+                    return;
+
+                var line_idx = parseInt(items[0]);
+                if (items[1] === "ok")
+                {
+                    if (line_idx > processing_line_idx)
+                        processing_line_idx = line_idx;
+                }
+                else if (items[1] === "resend")
+                {
+                    input_line_idx = parseInt(items[0]);
+                }
+            }
+        };
+        
+        function send_job() {
+            if (finished)
+                return;
+            else if (input_line_idx === input_lines.length) {
+                send_line("end");
+                finished = true;
+                return;
+            }
+
+            if (input_line_idx - processing_line_idx < BUFFER_SIZE) {
+                send_command(input_line_idx++);
+            }
+            setTimeout(function(){send_job()}, 10);
+        }
+
+        function send_command(line_idx)
+        {
+            var line = line_idx + "*" + input_lines[line_idx];
+            line = line + "*" + checksum(line);
+            send_line(line);
+        }
+
+        function send_line(line) {
+            line += "\n";
+            add_to_output("Sent: " + line);
+            ws.send(line);
+        }
+
+        function checksum(str) {
+            var csum = 0;
+            for (var i = 0; i < str.length; i++)
+                csum = csum ^ str.charCodeAt(i)
+            return csum
+        }
+
+        function add_to_output(line) {
+            var out_el = document.getElementById("output");
+            out_el.value += line;
+            out_el.scrollTop = out_el.scrollHeight;
+        }
+
+        document.getElementById("run").onclick = function () {
+            document.getElementById("output").value = "";
+            var input = document.getElementById('input_file').value;
+            input_lines = input.trim().split('\n');
+            input_line_idx = 0;
+            processing_line_idx = 0;
+            send_line("new");
+            finished = false;
+            send_job();
+        };
+
+        function handleFileSelect(evt) {
+            var files = evt.target.files; // FileList object
+            if (files.length === 0)
+                return;
+
+            var reader = new FileReader();
+
+            // Closure to capture the file information.
+            reader.onload = function(e) {
+                document.getElementById('input_file').value = e.target.result;
+            };
+
+            // Read in the image file as a data URL.
+            reader.readAsText(files[0]);
+        }
+
+        document.getElementById('file_picker').addEventListener('change', handleFileSelect, false);
+    </script>
+    </body>
+</html>
