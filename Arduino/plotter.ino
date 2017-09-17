@@ -13,14 +13,9 @@
 
 #define COMMUNICATION_TIMEOUT 10000
 
-PCF motor_pcf(32);
-MotorUnit unit(&motor_pcf);
-Tool tool(6, 122, 180);
-ToolHead head(&unit, &tool);
-GCodeIO gio;
-GCodeProcessor gproc;
-Configuration config;
-bool running_job = false;
+#define X_TOGGLE_PIN 14
+#define Y_TOGGLE_PIN 15
+#define SERVO_PIN 6
 
 const byte ROWS = 3; // Three rows
 const byte COLS = 3; // Three columns
@@ -35,6 +30,15 @@ byte rowPins[ROWS] = { 3, 4, 5 };
 // Connect keypad COL0, COL1 and COL2 to these Arduino pins.
 byte colPins[COLS] = { 7, 8, 9 };
 
+PCF motor_pcf(32);
+MotorUnit unit(&motor_pcf, X_TOGGLE_PIN, Y_TOGGLE_PIN);
+Tool tool(SERVO_PIN, 122, 180);
+ToolHead head(unit, tool);
+GCodeIO gio;
+GCodeProcessor gproc;
+Configuration config;
+bool running_job = false;
+
 // Create the Keypad
 Keypad kpd = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
@@ -45,13 +49,14 @@ HeightChange height_change;
 enum Opcode {NOTHING, LINE, MOVE, HEIGHT};
 Opcode op_code = NOTHING;
 uint32_t last_op_timestamp = 0;
-bool a = false;
 
 void setup() {
     // put your setup code here, to run once:
     Wire.begin();
     gio.setup();
     tool.setup();
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop() {
@@ -68,7 +73,7 @@ void loop() {
 
     // Buffer incoming data to internal buffer because 
     // UART buffers are very small
-    //gio.buffer_incoming();
+    gio.buffer_incoming();
     if (!head.is_idle() && time_diff(millis(), last_op_timestamp) > 2000)
         head.idle();
 

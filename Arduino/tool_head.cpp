@@ -7,11 +7,11 @@
 #define MOTOR_DELAY_RANGE_US (MAX_MOTOR_DELAY_US - MIN_MOTOR_DELAY_US)
 #define TOOL_DELAY_MS 1000
 
-ToolHead::ToolHead(MotorUnit* motor_unit, Tool* tool) :
+ToolHead::ToolHead(MotorUnit& motor_unit, Tool& tool) :
     _motor_unit(motor_unit),
     _tool(tool)
 {
-    _internal_resolution = min(_motor_unit->resolution_x(), _motor_unit->resolution_y());
+    _internal_resolution = min(_motor_unit.resolution_x(), _motor_unit.resolution_y());
     _head_x = 0;
     _head_y = 0;
 }
@@ -38,10 +38,8 @@ HeightChange ToolHead::create_height_change_to(double z_mm)
 bool ToolHead::process(DrawingLine* line)
 {
     uint32_t timestamp = micros();
-    //TODO: Move return condition to main loop
     if (line->finished())
         return true;
-        //return time_diff(timestamp, line->timestamp()) >= NEXT_COMMAND_DELAY_US;
 
     uint32_t delay = MAX_MOTOR_DELAY_US - (line->speed() * MOTOR_DELAY_RANGE_US) / 100;
     if (time_diff(timestamp, line->timestamp()) < delay)
@@ -53,7 +51,7 @@ bool ToolHead::process(DrawingLine* line)
     if (line->finished())
         return false;
 
-    _move_toward(line->x(), line->y());
+    _linear_move_toward(line->x(), line->y());
 
     return false;
 }
@@ -68,29 +66,7 @@ bool ToolHead::process(Movement* move)
         return false;
     move->timestamp(timestamp);
 
-    int32_t cx = 0, cy = 0;
-
-    while (cx == 0 && _head_x != move->x())
-    {
-        _head_x += _head_x < move->x() ? 1 : -1;
-        cx = _internal_to_real(_head_x, _motor_unit->resolution_x()) - _real_head_x();
-    }
-
-    while (cy == 0 && _head_y != move->y())
-    {
-        _head_y += _head_y < move->y() ? 1 : -1;
-        cy = _internal_to_real(_head_y, _motor_unit->resolution_y()) - _real_head_y();
-    }
-
-    if (cx > 0)
-        _motor_unit->step_x(Motor::FORWARD);
-    else if (cx < 0)
-        _motor_unit->step_x(Motor::BACKWARD);
-
-    if (cy > 0)
-        _motor_unit->step_y(Motor::FORWARD);
-    else if (cy < 0)
-        _motor_unit->step_y(Motor::BACKWARD);
+    _fast_move_toward(move->x(), move->y());
 
     return false;
 }
@@ -100,9 +76,9 @@ bool ToolHead::process(HeightChange* change)
     if (!change->processed())
     {
         if (change->z() < 0)
-            _tool->change_state(Tool::DOWN);
+            _tool.change_state(Tool::DOWN);
         else
-            _tool->change_state(Tool::UP);
+            _tool.change_state(Tool::UP);
         change->processed(true);
         change->timestamp(millis());
     }
@@ -111,53 +87,57 @@ bool ToolHead::process(HeightChange* change)
 
 void ToolHead::idle()
 {
-    _motor_unit->stop();
+    _motor_unit.stop();
 }
 
 bool ToolHead::is_idle()
 {
-    return _motor_unit->stopped();
+    return _motor_unit.stopped();
 }
 
-bool ToolHead::_move_toward(int32_t x, int32_t y) {
-    if (x > _head_x)
-    {
+void ToolHead::_basic_move_toward(int32_t x, int32_t y)
+{
+    if (x > _real_head_x())
+        _motor_unit.step_x(Motor::FORWARD);
+    else if (x < _real_head_x())
+        _motor_unit.step_x(Motor::BACKWARD);
+
+    if (y > _real_head_y())
+        _motor_unit.step_y(Motor::FORWARD);
+    else if (y < _real_head_y())
+        _motor_unit.step_y(Motor::BACKWARD);
+}
+
+bool ToolHead::_linear_move_toward(int32_t x, int32_t y) {
+    if (_head_x < x)
         _head_x++;
-    }
-    else if (x < _head_x)
-    {
+    else if (_head_x > x)
         _head_x--;
-    }
 
-    if (y > _head_y)
-    {
+    if (_head_y < y)
         _head_y++;
-    }
-    else if (y < _head_y)
-    {
+    else if (_head_y > y)
         _head_y--;
-    }
 
-    int32_t real_x = _internal_to_real(_head_x, _motor_unit->resolution_x());
-    int32_t real_y = _internal_to_real(_head_y, _motor_unit->resolution_y());
+    int32_t real_x = _internal_to_real(_head_x, _motor_unit.resolution_x());
+    int32_t real_y = _internal_to_real(_head_y, _motor_unit.resolution_y());
 
-    if (real_x > _real_head_x())
-    {
-        _motor_unit->step_x(Motor::FORWARD);
-    }
-    else if (real_x < _real_head_x())
-    {
-        _motor_unit->step_x(Motor::BACKWARD);
-    }
+    _basic_move_toward(real_x, real_y);
 
-    if (real_y > _real_head_y())
-    {
-        _motor_unit->step_y(Motor::FORWARD);
-    }
-    else if (real_y < _real_head_y())
-    {
-        _motor_unit->step_y(Motor::BACKWARD);
-    }
+    return x == _head_x && y == _head_y;
+}
+
+bool ToolHead::_fast_move_toward(int32_t x, int32_t y) {
+    int32_t target_real_x = _internal_to_real(x, _motor_unit.resolution_x());
+    int32_t target_real_y = _internal_to_real(y, _motor_unit.resolution_y());
+
+    _basic_move_toward(target_real_x, target_real_y);
+
+    // After finishing the move, update internal coordinates
+    if (target_real_x == _real_head_x())
+        _head_x = x;
+    if (target_real_y == _real_head_y())
+        _head_y = y;
 
     return x == _head_x && y == _head_y;
 }
@@ -174,10 +154,10 @@ int32_t ToolHead::_mm_to_internal(double mm)
 
 int32_t ToolHead::_real_head_x()
 {
-    return _motor_unit->position_x() / _motor_unit->resolution_x();
+    return _motor_unit.position_x() / _motor_unit.resolution_x();
 }
 
 int32_t ToolHead::_real_head_y()
 {
-    return _motor_unit->position_y() / _motor_unit->resolution_y();
+    return _motor_unit.position_y() / _motor_unit.resolution_y();
 }
