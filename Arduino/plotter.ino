@@ -55,6 +55,8 @@ void setup() {
     Wire.begin();
     gio.setup();
     tool.setup();
+    // Make sure that motors are in idle state
+    head.idle();
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 }
@@ -162,7 +164,7 @@ void loop() {
     }
     else
     {
-        if (config.finished())
+        if (true)//(config.finished())
         {
             running_job = gio.check_new_request();
             if (running_job)
@@ -175,6 +177,7 @@ void loop() {
         else
         {
             bool activity = kpd.getKeys();
+            last_op_timestamp = millis();
             config.process(kpd, activity, unit, tool);
         }
     }

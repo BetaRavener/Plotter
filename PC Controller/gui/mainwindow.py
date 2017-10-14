@@ -1,0 +1,108 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file './gui/qt\mainwindow.ui'
+#
+# Created by: PyQt5 UI code generator 5.6
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+# Added by buildgui.py script to support pyinstaller
+from src.pyinstaller_helper import PyInstallerHelper
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(559, 169)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setContentsMargins(-1, 0, -1, -1)
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.label_4 = QtWidgets.QLabel(self.centralwidget)
+        self.label_4.setObjectName("label_4")
+        self.horizontalLayout_3.addWidget(self.label_4)
+        self.connectionComboBox = QtWidgets.QComboBox(self.centralwidget)
+        self.connectionComboBox.setMinimumSize(QtCore.QSize(150, 0))
+        self.connectionComboBox.setObjectName("connectionComboBox")
+        self.horizontalLayout_3.addWidget(self.connectionComboBox)
+        self.refreshButton = QtWidgets.QPushButton(self.centralwidget)
+        self.refreshButton.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(PyInstallerHelper.resource_path("icons/refresh.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.refreshButton.setIcon(icon)
+        self.refreshButton.setObjectName("refreshButton")
+        self.horizontalLayout_3.addWidget(self.refreshButton)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_3.addItem(spacerItem)
+        self.statusLabel = QtWidgets.QLabel(self.centralwidget)
+        self.statusLabel.setObjectName("statusLabel")
+        self.horizontalLayout_3.addWidget(self.statusLabel)
+        self.connectButton = QtWidgets.QPushButton(self.centralwidget)
+        self.connectButton.setObjectName("connectButton")
+        self.horizontalLayout_3.addWidget(self.connectButton)
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.label_2 = QtWidgets.QLabel(self.centralwidget)
+        self.label_2.setObjectName("label_2")
+        self.horizontalLayout_2.addWidget(self.label_2)
+        self.inputFileEdit = QtWidgets.QLineEdit(self.centralwidget)
+        self.inputFileEdit.setObjectName("inputFileEdit")
+        self.horizontalLayout_2.addWidget(self.inputFileEdit)
+        self.inputFileButton = QtWidgets.QPushButton(self.centralwidget)
+        self.inputFileButton.setMaximumSize(QtCore.QSize(20, 16777215))
+        self.inputFileButton.setObjectName("inputFileButton")
+        self.horizontalLayout_2.addWidget(self.inputFileButton)
+        self.verticalLayout.addLayout(self.horizontalLayout_2)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setObjectName("label")
+        self.horizontalLayout.addWidget(self.label)
+        self.processedCountLabel = QtWidgets.QLabel(self.centralwidget)
+        self.processedCountLabel.setObjectName("processedCountLabel")
+        self.horizontalLayout.addWidget(self.processedCountLabel)
+        self.label_3 = QtWidgets.QLabel(self.centralwidget)
+        self.label_3.setObjectName("label_3")
+        self.horizontalLayout.addWidget(self.label_3)
+        self.totalCountLabel = QtWidgets.QLabel(self.centralwidget)
+        self.totalCountLabel.setObjectName("totalCountLabel")
+        self.horizontalLayout.addWidget(self.totalCountLabel)
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem1)
+        self.runButton = QtWidgets.QPushButton(self.centralwidget)
+        self.runButton.setObjectName("runButton")
+        self.horizontalLayout.addWidget(self.runButton)
+        self.verticalLayout.addLayout(self.horizontalLayout)
+        spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout.addItem(spacerItem2)
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 559, 21))
+        self.menubar.setObjectName("menubar")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "Plotter Controller"))
+        self.label_4.setText(_translate("MainWindow", "Port:"))
+        self.statusLabel.setText(_translate("MainWindow", "⬤"))
+        self.connectButton.setText(_translate("MainWindow", "Connect"))
+        self.label_2.setText(_translate("MainWindow", "Input file:"))
+        self.inputFileButton.setText(_translate("MainWindow", "..."))
+        self.label.setText(_translate("MainWindow", "Progress: "))
+        self.processedCountLabel.setText(_translate("MainWindow", "0"))
+        self.label_3.setText(_translate("MainWindow", "/"))
+        self.totalCountLabel.setText(_translate("MainWindow", "0"))
+        self.runButton.setText(_translate("MainWindow", "Run"))
+

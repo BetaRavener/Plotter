@@ -2,7 +2,7 @@
 #include "Arduino.h"
 #include "utility.h"
 
-#define MIN_MOTOR_DELAY_US 1300
+#define MIN_MOTOR_DELAY_US 3000//1300
 #define MAX_MOTOR_DELAY_US 10000
 #define MOTOR_DELAY_RANGE_US (MAX_MOTOR_DELAY_US - MIN_MOTOR_DELAY_US)
 #define TOOL_DELAY_MS 1000
@@ -82,7 +82,7 @@ bool ToolHead::process(HeightChange* change)
         change->processed(true);
         change->timestamp(millis());
     }
-    return millis() - change->timestamp() >= TOOL_DELAY_MS;
+    return time_diff(millis(), change->timestamp()) >= TOOL_DELAY_MS;
 }
 
 void ToolHead::idle()
@@ -108,38 +108,63 @@ void ToolHead::_basic_move_toward(int32_t x, int32_t y)
         _motor_unit.step_y(Motor::BACKWARD);
 }
 
-bool ToolHead::_linear_move_toward(int32_t x, int32_t y) {
-    if (_head_x < x)
-        _head_x++;
-    else if (_head_x > x)
-        _head_x--;
-
-    if (_head_y < y)
-        _head_y++;
-    else if (_head_y > y)
-        _head_y--;
-
-    int32_t real_x = _internal_to_real(_head_x, _motor_unit.resolution_x());
-    int32_t real_y = _internal_to_real(_head_y, _motor_unit.resolution_y());
-
-    _basic_move_toward(real_x, real_y);
-
-    return x == _head_x && y == _head_y;
+int32_t difference_sign(int32_t a, int32_t b)
+{
+    return a > b ? 1 : a < b ? -1 : 0;
 }
 
-bool ToolHead::_fast_move_toward(int32_t x, int32_t y) {
-    int32_t target_real_x = _internal_to_real(x, _motor_unit.resolution_x());
-    int32_t target_real_y = _internal_to_real(y, _motor_unit.resolution_y());
+bool ToolHead::_linear_move_toward(int32_t x, int32_t y) {
+    int32_t dx = difference_sign(x, _head_x);
+    int32_t dy = difference_sign(y, _head_y);
+    if (dx == 0 && dy == 0)
+        return true;
+
+    int32_t target_x = _head_x + dx;
+    int32_t target_y = _head_y + dy;
+
+    int32_t target_real_x = _internal_to_real(target_x, _motor_unit.resolution_x());
+    int32_t target_real_y = _internal_to_real(target_y, _motor_unit.resolution_y());
 
     _basic_move_toward(target_real_x, target_real_y);
 
-    // After finishing the move, update internal coordinates
-    if (target_real_x == _real_head_x())
-        _head_x = x;
-    if (target_real_y == _real_head_y())
-        _head_y = y;
+    _head_x = target_x;
+    _head_y = target_y;
 
-    return x == _head_x && y == _head_y;
+    return false;
+}
+
+bool ToolHead::_fast_move_toward(int32_t x, int32_t y) {
+    int32_t dx = difference_sign(x, _head_x);
+    int32_t dy = difference_sign(y, _head_y);
+    if (dx == 0 && dy == 0)
+        return true;
+
+    int32_t real_x = _real_head_x();
+    int32_t real_y = _real_head_x();
+
+    int32_t target_x = _head_x;
+    int32_t target_y = _head_y;
+    int32_t target_real_x = real_x;
+    int32_t target_real_y = real_y;
+
+    while (dx != 0 && target_real_x == real_x)
+    {
+        target_x += dx;
+        target_real_x = _internal_to_real(target_x, _motor_unit.resolution_x());
+    }
+
+    while (dy != 0 && target_real_y == real_y)
+    {
+        target_y += dy;
+        target_real_y = _internal_to_real(target_y, _motor_unit.resolution_y());
+    }
+    
+    _basic_move_toward(target_real_x, target_real_y);
+
+    _head_x = target_x;
+    _head_y = target_y;
+
+    return false;
 }
 
 int32_t ToolHead::_internal_to_real(int32_t i, int32_t constant)
@@ -154,10 +179,10 @@ int32_t ToolHead::_mm_to_internal(double mm)
 
 int32_t ToolHead::_real_head_x()
 {
-    return _motor_unit.position_x() / _motor_unit.resolution_x();
+    return _internal_to_real(_head_x, _motor_unit.resolution_x());
 }
 
 int32_t ToolHead::_real_head_y()
 {
-    return _motor_unit.position_y() / _motor_unit.resolution_y();
+    return _internal_to_real(_head_y, _motor_unit.resolution_y());
 }

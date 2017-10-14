@@ -12,7 +12,6 @@ Motor::Motor(int32_t resolution, bool inverted = false)
 {
     _current_phase = 0;
     _stopped = true;
-    position = 0;
     this->resolution = resolution;
     _inverted = inverted;
 }
@@ -20,7 +19,6 @@ Motor::Motor(int32_t resolution, bool inverted = false)
 void Motor::step(Direction dir)
 {
     int next_phase = dir == FORWARD ? 1 : -1;
-    position += next_phase > 0 ? resolution : -resolution;
 
     if (_inverted)
         next_phase = -next_phase;
@@ -62,29 +60,29 @@ MotorUnit::MotorUnit(PCF* pcf, int limit_x_pin, int limit_y_pin)
     _pcf = pcf;
 }
 
-void MotorUnit::go_to(int32_t x, int32_t y)
-{
-    while (true)
-    {
-        bool reached_x = abs(_motor[MOTOR_X].position - x) < _motor[MOTOR_X].resolution;
-        bool reached_y = abs(_motor[MOTOR_Y].position - y) < _motor[MOTOR_Y].resolution;
-        if (reached_x && reached_y)
-            break;
-
-        if (!reached_x)
-        {
-            Motor::Direction direction = ((x - _motor[MOTOR_X].position) > 0) ? Motor::FORWARD : Motor::BACKWARD;
-            _step(MOTOR_X, direction);
-        }
-        if (!reached_y)
-        {
-            Motor::Direction direction = ((y - _motor[MOTOR_Y].position) > 0) ? Motor::FORWARD : Motor::BACKWARD;
-            _step(MOTOR_Y, direction);
-        }
-        _update_motor_phases();
-        delay(2);
-    }
-}
+//void MotorUnit::go_to(int32_t x, int32_t y)
+//{
+//    while (true)
+//    {
+//        bool reached_x = abs(_motor[MOTOR_X].position - x) < _motor[MOTOR_X].resolution;
+//        bool reached_y = abs(_motor[MOTOR_Y].position - y) < _motor[MOTOR_Y].resolution;
+//        if (reached_x && reached_y)
+//            break;
+//
+//        if (!reached_x)
+//        {
+//            Motor::Direction direction = ((x - _motor[MOTOR_X].position) > 0) ? Motor::FORWARD : Motor::BACKWARD;
+//            _step(MOTOR_X, direction);
+//        }
+//        if (!reached_y)
+//        {
+//            Motor::Direction direction = ((y - _motor[MOTOR_Y].position) > 0) ? Motor::FORWARD : Motor::BACKWARD;
+//            _step(MOTOR_Y, direction);
+//        }
+//        _update_motor_phases();
+//        delay(2);
+//    }
+//}
 
 void MotorUnit::step_x(Motor::Direction direction)
 {
@@ -108,16 +106,6 @@ void MotorUnit::stop()
 bool MotorUnit::stopped()
 {
     return _motor[MOTOR_X].stopped() && _motor[MOTOR_Y].stopped();
-}
-
-int32_t MotorUnit::position_x()
-{
-    return _motor[MOTOR_X].position;
-}
-
-int32_t MotorUnit::position_y()
-{
-    return _motor[MOTOR_Y].position;
 }
 
 int32_t MotorUnit::resolution_x()
@@ -170,7 +158,6 @@ void MotorUnit::_step(MotorId motor_id, Motor::Direction direction)
     // Check limits and if motor can't move in the direction, do nothing
     if (!_check_limit(motor_id, direction))
     {
-        digitalWrite(LED_BUILTIN, HIGH);
         return;
     }
     _motor[motor_id].step(direction);

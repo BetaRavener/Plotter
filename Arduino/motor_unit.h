@@ -17,7 +17,6 @@ public:
     bool stopped();
     uint8_t phase();
 
-    int32_t position;
     int32_t resolution;
 private:
     uint8_t _current_phase;
@@ -37,8 +36,6 @@ public:
     void stop();
     bool stopped();
 
-    int32_t position_x();
-    int32_t position_y();
     int32_t resolution_x();
     int32_t resolution_y();
 
