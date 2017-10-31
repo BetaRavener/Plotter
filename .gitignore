@@ -31,6 +31,7 @@
 # Compilation dirs
 Debug/
 Release/
+build/
 
 # Log files
 *.log
@@ -43,3 +44,6 @@ Release/
 # Visual Micro
 __vm/
 .vs/
+
+# PyCache
+__pycache__/
