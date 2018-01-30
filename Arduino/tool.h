@@ -13,13 +13,11 @@ public:
 
     State state();
     void change_state(State state);
-    int height(State state);
-    void change_height(State state, int val);
 private:
     void _update_output();
     
     State _state;
-    int _servo_pin;
+    int _control_pin;
     int _up_height;
     int _down_height;
     int _min_height;

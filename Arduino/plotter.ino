@@ -15,7 +15,7 @@
 
 #define X_TOGGLE_PIN 14
 #define Y_TOGGLE_PIN 15
-#define SERVO_PIN 6
+#define TOOL_PIN 10
 
 const byte ROWS = 3; // Three rows
 const byte COLS = 3; // Three columns
@@ -32,7 +32,7 @@ byte colPins[COLS] = { 7, 8, 9 };
 
 PCF motor_pcf(32);
 MotorUnit unit(&motor_pcf, X_TOGGLE_PIN, Y_TOGGLE_PIN);
-Tool tool(SERVO_PIN, 122, 180);
+Tool tool(TOOL_PIN, 122, 180);
 ToolHead head(unit, tool);
 GCodeIO gio;
 GCodeProcessor gproc;
@@ -62,6 +62,14 @@ void setup() {
 }
 
 void loop() {
+	digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+	digitalWrite(TOOL_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+	delay(1000);                       // wait for a second
+	digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
+	digitalWrite(TOOL_PIN, LOW);    // turn the LED off by making the voltage LOW
+	delay(1000);
+	return;
+
     /*static int count = 2;
     if (count)
     {

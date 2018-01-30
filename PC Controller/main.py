@@ -1,17 +1,14 @@
-import os
 import sys
-from threading import Thread
 
 import serial
-
-from PyQt5.QtCore import QStringListModel, QModelIndex, Qt, QItemSelectionModel, QEventLoop, QDir
+from PyQt5.QtCore import Qt, QDir
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileSystemModel, \
-    QFileDialog, QInputDialog, QLineEdit, QMessageBox, QHeaderView
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 
 from gui.mainwindow import Ui_MainWindow
 from src.connection_scanner import ConnectionScanner
 from src.controler import Controller
+from src.gcode_file import GcodeFile
 from src.pyinstaller_helper import PyInstallerHelper
 
 __author__ = "Ivan Sevcik"
@@ -76,22 +73,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def run(self):
         try:
             file_path = self.inputFileEdit.text()
-            with open(file_path) as file:
-                self.totalCountLabel.setText(str(sum(1 for line in file)))
-                self.processedCountLabel.setText("0")
+            gcode_file = GcodeFile(file_path)
+            self.totalCountLabel.setText(str(len(gcode_file)))
+            self.processedCountLabel.setText("0")
 
-            # TODO: Run in new thread so that main is responsive
             # TODO: Report progress
             # TODO: Ability to stop
-            self._run_thread = Thread(target=self._controller.send_file, args=(file_path,))
-            self._run_thread.start()
+            self._controller.run(gcode_file)
         except FileNotFoundError as e:
             QMessageBox().warning(self, "File Error", "Can't open specified file", QMessageBox.Ok)
 
     def browse_input_file(self):
         path = QFileDialog().getOpenFileName(
             caption="Select external editor",
-            directory=QDir().homePath(),
             options=QFileDialog.ReadOnly)
 
         if path[0]:

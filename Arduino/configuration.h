@@ -8,10 +8,11 @@
 class Configuration
 {
 public:
+	Configuration();
     void process(Keypad& keypad, bool activity, MotorUnit& unit, Tool& tool);
     bool finished();
 private:
-    enum Stages {Z_UP = 0, XY, Z_DOWN, FINISHED};
+    enum Stages {START = 0, XY, FINISHED};
     int _stage;
 };
 
